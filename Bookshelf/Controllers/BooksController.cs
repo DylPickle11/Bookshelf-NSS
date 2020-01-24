@@ -27,8 +27,9 @@ namespace Bookshelf.Controllers
         // GET: Books
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Book.Include(b => b.Author);
-            return View(await applicationDbContext.ToListAsync());
+            var user = await GetCurrentUserAsync();
+            var books = _context.Book.Include(b => b.Author);
+            return View(await books.ToListAsync());
         }
 
         // GET: Books/Details/5
@@ -38,8 +39,11 @@ namespace Bookshelf.Controllers
             {
                 return NotFound();
             }
+            var user = await GetCurrentUserAsync();
 
             var book = await _context.Book
+                .Where(b => b.ApplicationUserId == user.Id)
+                .Include(b => b.ApplicationUser)
                 .Include(b => b.Author)
                 .Include(b => b.Comments)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -57,7 +61,7 @@ namespace Bookshelf.Controllers
             // If use await in method must wrap in async
             var user = await GetCurrentUserAsync();
             var authors = _context.Author.Where(a => a.ApplicationUserId == user.Id);
-            ViewData["AuthorId"] = new SelectList(_context.Author, "Id", "Name");
+            ViewData["AuthorId"] = new SelectList(authors, "Id", "Name");
             return View();
         }
 
